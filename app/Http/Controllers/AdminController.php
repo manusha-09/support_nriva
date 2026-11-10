@@ -35,7 +35,7 @@ class AdminController extends Controller
     }
     public function index()
     {  
-      if (!Auth::check() || Auth::user()->id != 1270) {
+      if (!Auth::check() || !Auth::user()->isSupportAdmin()) {
         return redirect('/member')->with('error', 'Unauthorized access');
     } 
         $completedcount=tickets::select(DB::Raw('count(*) as total'),'issue_status')->groupby("issue_status")->pluck('total','issue_status')->toArray();
@@ -171,32 +171,54 @@ class AdminController extends Controller
 }
     public function createticketfile(Request $request)
     {
+        // Keep existing submissions compatible; the new form sends an explicit mode.
+        if ($request->input('assignment_type') === 'committee') {
+            $request->merge(['c_id' => null]);
+        } elseif ($request->input('assignment_type') === 'chapter') {
+            $request->merge(['department' => null]);
+        }
       //dd($request->all())->toArray();
         $request->validate([
 
            
-            'subject' => 'required',
+            'subject' => 'required|string',
+            'project' => 'required|string|exists:tbl_ticketing_system_projects,name',
+            'category' => 'required|string|exists:tbl_ticketing_system_categories,name',
+            'description' => ['required', 'string', function ($attribute, $value, $fail) {
+                $text = html_entity_decode(strip_tags($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if (preg_replace('/[\s\x{00A0}\x{200B}]+/u', '', $text) === '') {
+                    $fail('Please enter a description.');
+                }
+            }],
+            'name' => Auth::check() ? 'nullable|string' : 'required|string',
+            'email' => Auth::check() ? 'nullable|email' : 'required|email',
+            'assignment_type' => 'nullable|in:committee,chapter,both',
+            'department' => [
+                'nullable', 'required_without:c_id', 'required_if:assignment_type,committee,both',
+                \Illuminate\Validation\Rule::exists('committees', 'name')->where('status', 1),
+            ],
+            'c_id' => [
+                'nullable', 'required_without:department', 'required_if:assignment_type,chapter,both',
+                'integer', 'exists:chapters,id',
+            ],
            
           
                     
              // 'name'=>'required',
              // 'email'=>'required',
+             ], [
+                 'project.required' => 'Please select a project.',
+                 'project.exists' => 'Please select a valid project.',
+                 'category.required' => 'Please select a category.',
+                 'category.exists' => 'Please select a valid category.',
+                 'subject.required' => 'Please enter a subject.',
+                 'description.required' => 'Please enter a description.',
+                 'department.required_if' => 'Please select a committee.',
+                 'department.required_without' => 'Please select a committee or chapter.',
+                 'c_id.required_if' => 'Please select a chapter.',
+                 'c_id.required_without' => 'Please select a committee or chapter.',
              ]);
 
-
-    if(empty($request->department) && empty($request->c_id))
-    {
-        return redirect()->back()
-            ->withInput()
-            ->with('error', 'Please select either Committee or Chapter.');
-    }
-
-    if(!empty($request->department) && !empty($request->c_id))
-    {
-        return redirect()->back()
-            ->withInput()
-            ->with('error', 'Please select only one: Committee or Chapter.');
-    }
 
         //dd($request->all());
 
@@ -259,13 +281,7 @@ class AdminController extends Controller
      if(!empty($ticket->department))
      {
 
-    $d_data = department::where('department', $ticket->department)->first();
-    if (!$d_data) {
-        $d_data = DB::table(config('nriva.database').'.committees')
-            ->where('name', $ticket->department)
-            ->select('name as department', 'email as committee_email')
-            ->first();
-    }
+    $d_data = department::where('name', $ticket->department)->first();
 
     if ($d_data && !empty($d_data->committee_email)) {
     
@@ -303,6 +319,10 @@ class AdminController extends Controller
     }
 
     public function viewtickets(Request $request){
+        // Dashboard counts cover all dates and must not inherit old list filters.
+        if ($request->boolean('dashboard')) {
+            $request->session()->forget(['department', 'category', 'priority', 'date_from', 'date_to', 'status']);
+        }
         //dd($request->status);
       
  $user = Auth::user();
@@ -354,17 +374,14 @@ $userCommittees = DB::table(config('nriva.database').'.committees')
     ->toArray();
 
         $ticketlist = DB::table('tbl_ticketing_system_tickets as tickets')
-       ->leftJoin('tbl_ticketing_system_users as users', 'users.id', '=', 'tickets.created_by')
-       ->leftJoin('tbl_ticketing_system_chapter as chapter', 'chapter.chapter_id', '=', 'tickets.c_id')
-       ->select('tickets.*', 'users.name as names', 'users.email as emails', 'chapter.*')
+       ->leftJoin('users as users', 'users.id', '=', 'tickets.created_by')
+       ->leftJoin('chapters as chapter', 'chapter.id', '=', 'tickets.c_id')
+       ->select('tickets.*', DB::raw("COALESCE(NULLIF(TRIM(CONCAT_WS(' ', users.first_name, users.last_name)), ''), tickets.name) as names"), 'users.email as emails', 'chapter.id as chapter_id', 'chapter.name as chapter_name', 'chapter.email as chapter_email')
        ->orderBy('tickets.id', 'desc');
       
 
 
 
-if ($user->id == 2285) {
-    $ticketlist = $ticketlist; 
-}
     //dd($request->session()->get('date_from'));
 
        if(!empty($request->session()->get('department'))){
@@ -384,13 +401,13 @@ if ($user->id == 2285) {
        if(!empty($request->session()->get('date_from'))){
         $ticketlist= $ticketlist->whereDate('tickets.created_at','>=',$request->session()->get('date_from'));
        }
-       else{
+       elseif (!$request->boolean('dashboard')) {
          $ticketlist= $ticketlist->whereDate('tickets.created_at','>=',date('Y-m-d',strtotime('-1 month')));
        }
         if(!empty($request->session()->get('date_to'))){
         $ticketlist= $ticketlist->whereDate('tickets.created_at','<=',$request->session()->get('date_to'));
        }
-       else{
+       elseif (!$request->boolean('dashboard')) {
         $ticketlist= $ticketlist->whereDate('tickets.created_at','<=',date('Y-m-d
             '));
        }
@@ -507,7 +524,7 @@ if ($user->id == 2285) {
 
         $ticket = tickets::findOrFail($id);
         $ticket->delete();
-        if(Auth::user()->Role==1){
+        if(Auth::user()->isSupportAdmin()){
             //dd(Auth::user()->Role)
             return redirect()->intended('viewticket')->with('success','Ticket has been Deleted successfully.');
 

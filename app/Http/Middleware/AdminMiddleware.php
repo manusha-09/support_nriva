@@ -14,8 +14,8 @@ class AdminMiddleware
             return redirect('/login');
         }
 
-        // ONLY Technology Chair ID
-        if (Auth::user()->id != 1270) {
+        // Admin access follows the role assigned in the shared NRIVA database.
+        if (!Auth::user()->isSupportAdmin()) {
             return redirect('/member')->with('error', 'Unauthorized access');
         }
 

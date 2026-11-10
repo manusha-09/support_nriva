@@ -139,8 +139,9 @@ text-decoration: none;
       
         <div class="row">
           <div class="col-12 col-md-12">
-               <form action="{{route('ticketfile')}}" method="post" enctype="multipart/form-data">
+               <form action="{{route('ticketfile')}}" method="post" enctype="multipart/form-data" data-ticket-create>
               @csrf
+              @include('tickets.create-errors')
                     <div class="row">
                         <div class="col-12 col-md-6 col-lg-6 pr-0 pr-md-4">
                             <div class="row">
@@ -149,9 +150,10 @@ text-decoration: none;
                                         <label for="text" class="col-sm-3 col-form-label">Select Project<span class="text-red">*</span></label>
                                         <div class="col-sm-9">
                                             <select  class="form-control ml-1" name="project" required>
+                                                <option value="">-- Select Project --</option>
                                              
                                                 @foreach ($projects as $project)
-                                                <option value="{{$project->name}}">{{$project->name}}
+                                                <option value="{{$project->name}}" {{ old('project') == $project->name ? 'selected' : '' }}>{{$project->name}}
                                                     
                                                 </option>
                                                 @endforeach
@@ -164,9 +166,9 @@ text-decoration: none;
                                         <label for="text" class="col-sm-3 col-form-label">Select Category <span class="text-red">*</span></label>
                                         <div class="col-sm-9">
                                             <select  class="form-control ml-1 custom-select"  name="category" required>
-                                                <option selected>-- Select category --</option>
+                                                <option value="">-- Select category --</option>
                                                 @foreach ($categories as $category)
-                                                <option value="{{$category->name}}">{{$category->name}}
+                                                <option value="{{$category->name}}" {{ old('category') == $category->name ? 'selected' : '' }}>{{$category->name}}
                                                     
                                                 </option>
                                                 @endforeach
@@ -174,39 +176,7 @@ text-decoration: none;
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-12">
-                                    <div class="form-group row mb-2">
-                                        <label for="text" class="col-sm-3 col-form-label">Assign To</label>
-                                        <div class="col-sm-9">
-                                            <select  class="form-control ml-1" name="department">
-                                                <option value="" >-- Committee--</option>
-                                                @foreach ($department as $departments)
-                                                <option value="{{$departments->name}}">{{$departments->name}}
-                                                    
-                                                </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                 <div class="col-12">
-                                    <div class="form-group row mb-2">
-                                        <label for="text" class="col-sm-3 col-form-label">Assign To</label>
-                                        <div class="col-sm-9">
-                                            <select  class="form-control ml-1" name="c_id">
-                                                <option value="" >-- Select Chapter--</option>
-                                             
-                                                @foreach ($chapter as $chapters)
-                                                <option value="{{$chapters->chapter_id}}">{{$chapters->chapter_name}}
-                                                    
-                                                </option>
-                                                  @endforeach
-                                           
-                                           
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
+                                @include('tickets.assignment-fields')
                                 <div class="col-12">
                                     <div class="form-group row mb-2">
                                         <label for="text" class="col col-sm-3 col-form-label">Issue Priority</label>
@@ -293,13 +263,13 @@ text-decoration: none;
                             <div class="form-group row mb-2">
                                 <label for="text" class="col-12 col-form-label">Subject<span class="text-red">*</span></label>
                                 <div class="col-12">
-                                    <input type="text" class="form-control" id="inputPassword" name="subject" placeholder="Subject" required>
+                                    <input type="text" class="form-control" id="inputPassword" name="subject" placeholder="Subject" value="{{ old('subject') }}" required>
                                 </div>
                             </div>
                             <div class="form-group row mb-2">
-                                <label class="col-12 col-form-label">Description</label>
+                                <label class="col-12 col-form-label">Description <span class="text-red">*</span></label>
                                 <div class="col-12">
-                                    <textarea id="editor1" class="form-control" id="inputPassword" name="description" required></textarea>
+                                    <textarea id="editor1" class="form-control" name="description" required>{{ old('description') }}</textarea>
                                 </div>
                             </div>
                         </div>
@@ -380,3 +350,4 @@ text-decoration: none;
   ele.parentNode.removeChild(ele);
 }
 </script>
+<script src="{{ asset('dist/js/ticket-create-validation.js') }}" defer></script>

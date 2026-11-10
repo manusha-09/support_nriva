@@ -2,7 +2,7 @@
   <!-- /.navbar -->
 
   <!-- Main Sidebar Container -->
-   @if ( Auth::user()->Role == '1')
+   @if ( Auth::user()->isSupportAdmin())
    
   @include('sidemenu')
 

@@ -133,7 +133,7 @@ public function commiitteedata(Request $request)
     
     if (!empty($request->status) && $request->status != 'All') {
         $datalist->where('issue_status', $request->status);
-    } else {
+    } elseif ($request->status != 'All') {
         $datalist->where('issue_status', 'Pending');
     }
 

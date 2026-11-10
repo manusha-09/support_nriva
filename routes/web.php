@@ -26,12 +26,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/',[App\Http\Controllers\userController::class,'withoutlogincreateticket'])->name('home');
 Route::post('/ticketfile',[App\Http\Controllers\AdminController::class,'createticketfile'])->name('ticketfile');
 Route::get('login', [AuthController::class, 'index'])->name('login');
-Route::post('post-registration', [AuthController::class, 'Add'])->name('register.post'); 
 
 Route::post('login', [AuthController::class, 'postLogin'])->name('login'); 
 Route::get('logout', [AuthController::class, 'logouts'])->name('logout');
 
-Route::get('registration', [AuthController::class, 'registration'])->name('register');
 
 
 Route::middleware(['auth', 'admin'])->group(function () {
@@ -49,18 +47,9 @@ Route::delete('/projectdestroy/{id}',[App\Http\Controllers\projectController::cl
 Route::put('/projectupdate/{id}',[App\Http\Controllers\projectController::class,'projectupdate'])->name('projectupdate');
 Route::get('/update_project',[App\Http\Controllers\projectController::class,'status']);
 
-Route::get('/createusers',[App\Http\Controllers\AdminController::class,'usersview'])->name('createusers');
-Route::delete('/destroyuser/{id}',[App\Http\Controllers\AdminController::class,'destroyusers'])->name('destroyuser');
-Route::put('/updateuser/{id}',[App\Http\Controllers\AdminController::class,'updateusers'])->name('updateuser');
-
-Route::get('/department',[App\Http\Controllers\departmentController::class,'department'])->name('department');
-Route::get('/departmentcreate',[App\Http\Controllers\departmentController::class,'departmentcreate']);
-Route::get('/departmentedit,{id}',[App\Http\Controllers\departmentController::class,'departmentedit'])->name('departmentedit');
 
 
-Route::POST('/departmentstore',[App\Http\Controllers\departmentController::class,'departmentstore']);
-Route::delete('/departmentdestroy/{id}',[App\Http\Controllers\departmentController::class,'departmentdestroy'])->name('departmentdestroy');
-Route::put('/departmentupdate/{id}',[App\Http\Controllers\departmentController::class,'departmentupdate'])->name('departmentupdate');
+
 
 });
 Route::group(['middleware' => ['auth']], function () {
@@ -78,22 +67,18 @@ Route::delete('/destroy/{id}',[App\Http\Controllers\AdminController::class,'dest
 Route::put('/update/{id}',[App\Http\Controllers\AdminController::class,'update'])->name('update');
 
 
-// Route::post('post-registration', [AuthController::class, 'postRegistration'])->name('register.post'); 
 
 
-// ------------------department----------------------------------------------
+// User, committee, chapter management and registration routes are disabled.
+// These records are managed in the shared NRIVA application.
 
 
 
 
-Route::get('/role',[App\Http\Controllers\EmployeeController::class,'role'])->name('role');
-Route::get('/create_employee',[App\Http\Controllers\EmployeeController::class,'employee'])->name('employee');
-Route::get('/employeelist',[App\Http\Controllers\EmployeeController::class,'employeelist'])->name('employeelist');
 
 
 Route::get('/createticket',[App\Http\Controllers\AdminController::class,'createticket'])->name('createticket');
 
-Route::get('/update_status',[App\Http\Controllers\departmentController::class,'status']);
 
 
 
@@ -134,11 +119,7 @@ Route::get('forget-password', [AuthController::class, 'showForgetPasswordForm'])
 Route::post('forget-password', [AuthController::class, 'submitForgetPasswordForm'])->name('forget.password.post'); 
 Route::get('reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('reset.password.get');
 Route::post('reset-password', [AuthController::class, 'submitResetPasswordForm'])->name('reset.password.post');
-Route::get('chapters',[ChapterController::class,'viewchapter'])->name('chapters');
-Route::delete('/chapterdestroy/{id}',[App\Http\Controllers\ChapterController::class,'chapterdestroy'])->name('chapterdestroy');
 
-Route::post('chaptercreate',[App\Http\Controllers\ChapterController::class,'chaptercreate'])->name('chaptercreate');
-Route::put('/chapterupdate/{id}',[App\Http\Controllers\ChapterController::class,'chapterupdate'])->name('chapterupdate');
 
 Route::get('/reply/store',[App\Http\Controllers\CommentController::class,'store'])->name('reply.add');
 Route::get('/delete_comments', [CommentController::class, 'commentDelete']);

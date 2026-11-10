@@ -1,6 +1,6 @@
 <?php
 
 return [
-    // Committee tables share the MySQL server configured in config/database.php.
-    'database' => env('NRIVA_DATABASE', 'db_prod_nriva'),
+    // All lookups use the same database as the application's MySQL connection.
+    'database' => config('database.connections.mysql.database'),
 ];

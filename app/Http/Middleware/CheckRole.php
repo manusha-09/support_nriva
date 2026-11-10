@@ -20,7 +20,7 @@ class CheckRole
         //     return redirect()->route('login');
         // }
 
-        if (Auth::user()->role == 1) {
+        if (Auth::check() && Auth::user()->isSupportAdmin()) {
             return redirect()->route('admin');
         }else{
             return redirect()->route('tickets');

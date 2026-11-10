@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class department extends Model
 {
-protected $table = 'tbl_ticketing_system_departments';
+protected $table = 'committees';
+
+    public function getDepartmentAttribute() { return $this->attributes['name']; }
+    public function getCommitteeEmailAttribute() { return $this->attributes['email']; }
     
    
     protected $fillable = ['department','committee_email'];
@@ -18,18 +21,18 @@ protected $table = 'tbl_ticketing_system_departments';
    
     public function pending_tickets($value='')
     {
-       return $this->hasMany('App\Models\tickets','department','department')->where('issue_status','pending');
+       return $this->hasMany('App\Models\tickets','department','name')->where('issue_status','pending');
     }
     public function tickets_assigned($value='')
     {
-       return $this->hasMany('App\Models\tickets','department','department')->where('issue_status','assigned');
+       return $this->hasMany('App\Models\tickets','department','name')->where('issue_status','assigned');
     }
     public function tickets_completed($value='')
     {
-       return $this->hasMany('App\Models\tickets','department','department')->where('issue_status','completed');
+       return $this->hasMany('App\Models\tickets','department','name')->where('issue_status','completed');
     }
     public function tickets_in_progress($value='')
     {
-       return $this->hasMany('App\Models\tickets','department','department')->where('issue_status','inprogress');
+       return $this->hasMany('App\Models\tickets','department','name')->where('issue_status','inprogress');
     }
 }

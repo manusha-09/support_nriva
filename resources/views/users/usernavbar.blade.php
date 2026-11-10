@@ -1,3 +1,6 @@
+@if(Auth::user()->isSupportAdmin())
+@include('navbar')
+@else
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -116,3 +119,4 @@
       
     </ul>
   </nav>
+@endif

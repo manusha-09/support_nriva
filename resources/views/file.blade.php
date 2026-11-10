@@ -23,7 +23,7 @@
     	<?php //dd(explode(',', $ticket->file_path)); ?>
     	   @foreach(explode(',', $ticket->file_path) as $files) 
     	   <div class="btn btn-success btn-styles btn-sm">
-                           <a style="color: white;" href="{{URL::asset('storage/app/'.$files)}}" target="blank">Files
+                           <a style="color: white;" href="{{asset('storage/'.preg_replace('#^public/#', '', $files))}}" target="blank">Files
                        
                            </a>
                         </div>

@@ -6,12 +6,16 @@ use App\Models\tickets;
 
 function is_user_committee()
 {
-$department=department::where('committee_email',Auth::user()->email)->first();
-         
-             
-$datalist=tickets::where('department',$department->department??"")->get();
+    if (!Auth::check()) {
+        return false;
+    }
 
-return true;
+    return DB::table('committeemembers as membership')
+        ->join('committees as committee', 'committee.id', '=', 'membership.committee_id')
+        ->where('membership.user_id', Auth::id())
+        ->where('membership.status', 1)
+        ->where('committee.status', 1)
+        ->exists();
 
          
 }

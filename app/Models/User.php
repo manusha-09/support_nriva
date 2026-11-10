@@ -13,6 +13,20 @@ class User extends Authenticatable
    protected $table='users';
     use HasApiTokens, Notifiable;
 
+    public function isSupportAdmin()
+    {
+        return $this->exists && $this->getConnection()->table('role_users as membership')
+            ->join('roles as role', 'role.id', '=', 'membership.role_id')
+            ->where('membership.user_id', $this->getKey())
+            ->where('role.slug', 'admin')
+            ->exists();
+    }
+
+    public function getNameAttribute()
+    {
+        return trim(($this->attributes['first_name'] ?? '').' '.($this->attributes['last_name'] ?? '')) ?: $this->email;
+    }
+
     /**
      * The attributes that are mass assignable.
      *

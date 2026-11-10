@@ -50,7 +50,7 @@ class AuthController extends Controller
     // protected $redirectTo;
     public function adminindex()
     {
-        if(Auth::user()->role){
+        if(Auth::user() && Auth::user()->isSupportAdmin()){
            
             $this->redirectTo = '/admin';
         //     return $this->redirectTo;
@@ -64,7 +64,7 @@ class AuthController extends Controller
     {
         if(Auth::user()){
 
-                   if(Auth::user()->id == 1270){
+                   if(Auth::user()->isSupportAdmin()){
 
             return redirect()->intended('admin');
                     }else{
@@ -142,9 +142,7 @@ class AuthController extends Controller
     {
         $email=$request->email;
        
-        $data=department::get();
-
-        $dep_email = department::where('committee_email',$email)->first();
+        $dep_email = department::where('email',$email)->first();
         //dd($dep_email);
      
         $request->validate([
@@ -159,14 +157,15 @@ class AuthController extends Controller
 
         $credentials = $request->only('email', 'password');
      $user = \App\Models\User::where('email', $credentials['email'])->first();
-if ($user && (Hash::check($credentials['password'], $user->password2) || Hash::check($credentials['password'], $user->password))) {
+if ($user && ((!empty($user->password2) && Hash::check($credentials['password'], $user->password2)) || (!empty($user->password) && Hash::check($credentials['password'], $user->password)))) {
         Auth::login($user);
+        $request->session()->regenerate();
     $user = Auth::user();
 
    
-    if ($user->id == 1270) {
+    if ($user->isSupportAdmin()) {
         return redirect()->intended('/admin')
-            ->withSuccess('Welcome Technology Chair (Admin)');
+            ->withSuccess('Welcome Admin');
     }
                     elseif(!empty($dep_email)){
 
@@ -403,8 +402,9 @@ if ($user && (Hash::check($credentials['password'], $user->password2) || Hash::c
               return back()->withInput()->with('error', 'Invalid token!');
           }
   
+          $password = Hash::make($request->password);
           $user = User::where('email', $request->email)
-                      ->update(['password' => Hash::make($request->password)]);
+                      ->update(['password' => $password, 'password2' => $password]);
  
           DB::table('password_resets')->where(['email'=> $request->email])->delete();
   

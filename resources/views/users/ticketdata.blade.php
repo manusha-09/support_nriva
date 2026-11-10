@@ -184,7 +184,7 @@
      
             @foreach($images as $image)
              
-            <img src="{{URL::asset('storage/app/'. $image)}}"  class="images " width="100px" height=
+            <img src="{{asset('storage/'.preg_replace('#^public/#', '', $image))}}"  class="images " width="100px" height=
             "100px">
             @endforeach
         
@@ -225,7 +225,7 @@
 
                 <div class="col-12">
 
-                <img src="{{URL::asset('storage/app/'. $searchid->file_path)}}" height="100px" width="100px" class="mr-2 open_pop">
+                <img src="{{asset('storage/'.preg_replace('#^public/#', '', $searchid->file_path))}}" height="100px" width="100px" class="mr-2 open_pop">
 
               </div>
 

@@ -1,5 +1,5 @@
 @include('users.usernavbar')
-@if(Auth::user()->Role=="1")
+@if(Auth::user()->isSupportAdmin())
 @include('sidemenu')
 @else
 @include('users.usersidemenu')
@@ -87,7 +87,7 @@
 
      <tr>
       <th scope="row">Upadted Files</th>
-      <td><a href="{{URL::asset('storage/app/'.$details->file_path)}}">{{$details->file_path}}</a></td>
+      <td><a href="{{asset('storage/'.preg_replace('#^public/#', '', $details->file_path))}}">{{$details->file_path}}</a></td>
       
     </tr>
    

@@ -15,7 +15,7 @@ class tickets extends Model
 
      public function chapters()
     {
-        return $this->belongsTo('App\Models\chapters','c_id','chapter_id');
+        return $this->belongsTo('App\Models\chapters','c_id','id');
     }
      public function users()
     {

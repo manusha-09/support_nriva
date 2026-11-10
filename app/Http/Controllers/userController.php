@@ -89,14 +89,19 @@ $data_incomplete=$data->where('issue_status','inprogress')->count();
       $id = $id ?? $request->input('id');
    
         $ticket = tickets::findOrFail($id);
-        $ticket->department = $request->department;
+        if ($request->exists('department')) {
+            $ticket->department = $request->filled('department') ? $request->department : null;
+        }
         $ticket->subject = $request->subject;
         $ticket->category = $request->category;
         // $ticket->project = $request->input('project');
           $ticket->issue_priority = $request->issue_priority;
         $ticket->description = $request->description;
              $ticket->issue_status = $request->issue_status;
-             if ($request->has('chapter')) { $ticket->c_id = $request->chapter; }
+             if ($request->exists('chapter')) {
+                 $request->validate(['chapter' => 'nullable|integer|exists:chapters,id']);
+                 $ticket->c_id = $request->filled('chapter') ? $request->chapter : null;
+             }
              //dd($request->all());
      
       
@@ -153,12 +158,10 @@ $data_incomplete=$data->where('issue_status','inprogress')->count();
     }
     public function withoutlogincreateticket(){
         $categories = categories::all();
-        $department = department::all();
         $department = DB::table(config('nriva.database').'.committees')
             ->where('status', 1)
             ->orderBy('name', 'asc')
             ->get();
-        $department = collect();
 
         $projects = project::all();
          // $chapter = chapters::all();

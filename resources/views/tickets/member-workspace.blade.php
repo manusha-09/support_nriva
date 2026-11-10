@@ -227,7 +227,7 @@
      
             @foreach($images as $key=>$image)
              <span class="removeimage"><button class=' mr-2 delete_images py-1' data-id="{{$data[0]->id??''}}" data-key="{{$key}}" data-src="{{$image}}" href="javascript:;" onclick="return confirm('Are you sure?')">X</button>
-            <img src="{{URL::asset('storage/app/'. $image)}}"  class="images images_list " width="100px" height=
+            <img src="{{asset('storage/'.preg_replace('#^public/#', '', $image))}}"  class="images images_list " width="100px" height=
             "100px"></span>
             @endforeach
         
@@ -365,7 +365,7 @@
                             <label for="">Chapter Name</label>
                             
                              <select  class="form-control chaptername" name="chapter">
-                            <option value="">{{$data[0]->chapter_name??''}}</option>
+                            <option value="">-- No Chapter --</option>
                             @foreach ($chapters as $chapter)
                             <option value="{{$chapter->chapter_id??''}}">{{$chapter->chapter_name??''}}
                                 
@@ -514,14 +514,15 @@ window.location.href= @json($deskListUrl ?? url('mytickets'));
       function loading_data(userid) {
            // AJAX POST request
            $.ajax({
-              url: 'getUserbyid',
+              url: '{{ url('getUserbyid') }}',
+              cache: false,
               type: 'get',
               data: {userid:userid},
               dataType: 'json',
               success: function(response){
                $("#LoadingImage").hide();
        CKEDITOR.instances['editor1'].setData(response.employees.description);
-             var images= response.employees.file_path.split(',');
+             var images= (response.employees.file_path || '').split(',');
                var image_html ='';
                var updateimage_html = '';
 
@@ -529,8 +530,8 @@ window.location.href= @json($deskListUrl ?? url('mytickets'));
                   
                   if(images[i]!=''){
 
-                     image_html+='<span class="removeimage"><button class="delete_images" href=""data-id='+response.employees.id+' data-key='+i+' data-src='+images[i]+'>&times;</button><img src="storage/app/'+images[i]+'" height="100px" width="100px" class="mr-2 images_list" data-src="storage/app/'+images[i]+'"> </span>';
-                     updateimage_html+='<img src="storage/app/'+images[i]+'" height="100px" width="100px" class="mr-2 images_list">';
+                     image_html+='<span class="removeimage"><button class="delete_images" href=""data-id='+response.employees.id+' data-key='+i+' data-src='+images[i]+'>&times;</button><img src="{{ asset('storage') }}/'+images[i].replace(/^public\//, '')+'" height="100px" width="100px" class="mr-2 images_list" data-src="{{ asset('storage') }}/'+images[i].replace(/^public\//, '')+'"> </span>';
+                     updateimage_html+='<img src="{{ asset('storage') }}/'+images[i].replace(/^public\//, '')+'" height="100px" width="100px" class="mr-2 images_list">';
 
                   }
 
@@ -545,7 +546,8 @@ window.location.href= @json($deskListUrl ?? url('mytickets'));
                      //alert(response.employees.name);
                        $('#email').text(response.employees.email);
                         $('.department_ajax').text(response.employees.department);
-                          $('.department_ajax_val').val(response.employees.department);
+                          $('.department_ajax_val').val(response.employees.department || '').text(response.employees.department || '-- No Committee --');
+                          $('select[name=department]').val(response.employees.department || '');
                          $('.category_ajax').text(response.employees.category);
                             $('.category_ajax_val').val(response.employees.category);
                          $('.descriptiondata').html("");
@@ -561,6 +563,7 @@ window.location.href= @json($deskListUrl ?? url('mytickets'));
                                   
                             if (response.employees.chapters === null) {
                                 $('.chaptername1').text("No Chapter Available");
+                                $('.chaptername').val('');
                             }else{ 
                                // console.log(response.employees.chapters);
                                 $('.chaptername1').text(response.employees.chapters.chapter_name);
@@ -594,6 +597,7 @@ window.location.href= @json($deskListUrl ?? url('mytickets'));
                           
                                  
                                  $('.comments_list').html(response.comments);
+                                 document.dispatchEvent(new CustomEvent('ticket:loaded', {detail: response.employees}));
                             }
 
 
@@ -706,8 +710,9 @@ $('body').on('click',"#edit_cancel",function() {
     });
          $('body').on('submit','.update_ticket_formdata',function(e){
     var id = $('.ticketid').val();
-    var formData = new FormData($('.update_ticket_formdata')[0]);
-    formData.append('image', $('input[type=file]')[0].files[0]);
+    if (window.CKEDITOR && CKEDITOR.instances.editor1) CKEDITOR.instances.editor1.updateElement();
+    var formData = new FormData(this);
+
      formData.append('id',id); 
         e.preventDefault();    
      $.ajax({
@@ -718,6 +723,8 @@ $('body').on('click',"#edit_cancel",function() {
             contentType: false,
            success: function(data) {
               loading_data(id);
+              $('.editshowdetails').hide();
+              $('#showdetails').show();
              Swal.fire({
             position: 'center',
             icon: 'success',

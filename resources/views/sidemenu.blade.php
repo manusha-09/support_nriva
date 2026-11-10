@@ -10,52 +10,57 @@
       .active{
         background-color:skyblue;
       }
-   
+
     </style>
   <div class="wrapper d-flex align-items-stretch">
       <nav id="sidebar" class="active">
-        
+
         <ul class="components mb-5 ">
           <li class="">
-            <a href="{{url('admin') }}"><span class="fa fa-home"></span>DashBoard</a>
+            <a href="{{ Auth::user()->isSupportAdmin() ? route('admin') : route('member') }}"><span class="fa fa-home"></span>DashBoard</a>
           </li>
+          @if(Auth::user()->isSupportAdmin())
           <li>
                <a href="{{route('viewticket')}}"><span class="fa fa-user"></span> All Tickets</a>
           </li>
+          @else
+          <li>
+            <a href="{{route('mytickets')}}"><span class="fa fa-user"></span>My Tickets</a>
+          </li>
+          <li>
+            <a href="{{route('user_committee')}}"><span class="fa fa-sticky-note"></span>All Tickets</a>
+          </li>
+          @endif
           <li>
             <a href="{{route('createticket')}}"><span class=" fas fa-pen"></span>CreateTicket</a>
           </li>
          <!--  <li>
             <a href="#" class="tereeview"><span class="fa fa-cogs"></span>Masters</a>
           </li> -->
-       
+
+          @if(Auth::user()->isSupportAdmin())
            <li>
-             
+
            <a href="{{url('/tickets') }}"><span class="fa fa-plus-square-o"></span>Categories</a>
 
           </li>
-           <li>
-            <a href="{{route('department')}}"><span class="fa fa-users"></span>Committees</a>
-
-          </li>
 
 
-           <li>
-           <a href="{{route('createusers')}}"><span class="fa fa-user"></span>Users</a>
 
-          </li>
+
            <li>
              <a href="{{route('projects')}}"><span class="fas fa-list"></span>Projects</a>
           </li>
                 <li>
             <a href="{{route('logo_edit')}}"><span class=" fas fa-pen"></span>Manage&nbsp;Data</a>
           </li>
+          @endif
           <li>
              <a href="{{route('logout')}}" ><span class="fa fa-paper-plane"></span>Logout</a>
           </li>
         </ul>
 
-         
+
       </nav>
 
   </aside>
