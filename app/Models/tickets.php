@@ -10,7 +10,7 @@ class tickets extends Model
 {
     protected $table='tbl_ticketing_system_tickets';
     use  Notifiable;
-    protected $fillable = ['subject','category','issue_priority','department','project','description','file_path','created_by','name','email','issue_status','c_id','committee','ticket_unique_id','created_at','updated_at','ticket_created_by_id'];
+    protected $fillable = ['subject','category','issue_priority','department','project','description','file_path','created_by','name','email','issue_status','c_id','committee','ticket_unique_id','created_at','updated_at','ticket_created_by_id','assigned_committee_member_id','assigned_chapter_lead_id','assigned_committee_user_id','assigned_chapter_user_id'];
 
 
      public function chapters()

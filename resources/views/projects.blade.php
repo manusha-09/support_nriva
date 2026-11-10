@@ -56,10 +56,10 @@
                         <td>{{ $project->name }}</td>
                           <td> 
                             
-                          <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input checked" id="customSwitches" data-id="{{ $project->id}}" @if($project->status==1) checked @endif>
-                                <label class="custom-control-label" for="customSwitches"></label>
-                              </div>
+                          <select class="form-control form-control-sm project-status" style="width: 125px;" aria-label="Status for {{ $project->name }}" data-id="{{ $project->id }}" data-status="{{ (int) $project->status }}">
+                            <option value="0" @if($project->status==0) selected @endif>Inactive</option>
+                            <option value="1" @if($project->status==1) selected @endif>Active</option>
+                          </select>
                              
                             </td>
                         
@@ -182,11 +182,12 @@
 
 
 @include('categories.script')
+<link rel="stylesheet" href="{{asset('plugins/sweetalert2/sweetalert2.min.css')}}">
+<script src="{{asset('plugins/sweetalert2/sweetalert2.all.min.js')}}"></script>
 
  
 <script type="text/javascript">
   $(".projectedit").click(function(){
-    alert("hi");
        var id = $(this).data('id');
 
     var name = $(this).data('name');
@@ -196,13 +197,7 @@
 
     
   });
-  $(document).ready(function(){
-  $(".del").click(function(){
-    if (!confirm("Do you want to delete")){
-      return false;
-    }
-  });
-});
+  
 // $('.switch-input').on('change', function() {
 //     result = document.getElementsByClassName("switch-input")[0].checked ? 'yes' : 'no';
 //     alert(result);
@@ -214,22 +209,52 @@
   //     }
   //   });
 
-    $(".checked").click(function() {
-      var id = $(this).data('id');
-       // alert(id);
+    $(".project-status").on('change', function() {
+      var toggle = $(this);
+      var previousStatus = String(toggle.data('status'));
+      var selectedStatus = toggle.val();
+      toggle.prop('disabled', true);
 
-    $.ajax({
-      type: "get",
-      url: '{{url("update_project")}}',
-      data: {
-        'id': id
-      },
+      Swal.fire({
+        title: 'Are you sure?',
+        text: 'want to change this record!',
+        icon: 'warning',
+        showCancelButton: true,
+        cancelButtonText: 'No, cancel pls!',
+        confirmButtonText: 'Yes, change it!',
+        confirmButtonColor: '#dd6b55',
+        cancelButtonColor: '#999999',
+        reverseButtons: true
+      }).then(function(result) {
+        if (!result.value) {
+          toggle.val(previousStatus).prop('disabled', false);
+          return;
+        }
 
-      success: function(data){
-            alert("updated");
-      },
+        $.ajax({
+          type: 'get',
+          url: '{{url("update_project")}}',
+          dataType: 'json',
+          data: {id: toggle.data('id'), status: selectedStatus},
+          success: function(data) {
+            if (data.success === true) {
+              toggle.val(String(data.status)).data('status', Number(data.status));
+              Swal.fire('Changed!', 'Your record has been updated!', 'success');
+            } else {
+              toggle.val(previousStatus);
+              Swal.fire('Unable to update', 'Please try again.', 'error');
+            }
+          },
+          error: function() {
+            toggle.val(previousStatus);
+            Swal.fire('Unable to update', 'The status could not be saved. Please refresh and try again.', 'error');
+          },
+          complete: function() {
+            toggle.prop('disabled', false);
+          }
+        });
+      });
     });
-});
   
 </script>
 </body>

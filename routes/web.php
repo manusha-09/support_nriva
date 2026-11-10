@@ -34,6 +34,9 @@ Route::get('logout', [AuthController::class, 'logouts'])->name('logout');
 
 Route::middleware(['auth', 'admin'])->group(function () {
 
+    Route::get('/settings', [\App\Http\Controllers\TicketSettingsController::class, 'edit'])->name('ticket.settings');
+    Route::post('/settings', [\App\Http\Controllers\TicketSettingsController::class, 'update'])->name('ticket.settings.update');
+
     Route::get('/admin', [AdminController::class, 'index'])
         ->middleware('admin')
         ->name('admin');
@@ -53,6 +56,15 @@ Route::get('/update_project',[App\Http\Controllers\projectController::class,'sta
 
 });
 Route::group(['middleware' => ['auth']], function () {
+
+Route::get('/assigned-to/{scope}', [\App\Http\Controllers\AssignedTicketsController::class, 'index'])
+    ->where('scope', 'committee|chapter|me')->name('assigned.tickets');
+
+Route::get('/ticket-assignees', function (\Illuminate\Http\Request $request) {
+    abort_unless(\App\Services\TicketSettings::memberAssignmentEnabled(), 403);
+    $request->validate(['type' => 'required|in:committee,chapter', 'group' => 'required|string']);
+    return response()->json(\App\Services\TicketAssignees::members($request->type, $request->group));
+})->name('ticket.assignees');
 
 
 
@@ -121,8 +133,10 @@ Route::get('reset-password/{token}', [AuthController::class, 'showResetPasswordF
 Route::post('reset-password', [AuthController::class, 'submitResetPasswordForm'])->name('reset.password.post');
 
 
-Route::get('/reply/store',[App\Http\Controllers\CommentController::class,'store'])->name('reply.add');
-Route::get('/delete_comments', [CommentController::class, 'commentDelete']);
+Route::get('/reply/store',[App\Http\Controllers\CommentController::class,'store'])->middleware('auth')->name('reply.add');
+Route::post('/reply/store',[App\Http\Controllers\CommentController::class,'store'])->middleware('auth');
+Route::put('/comments/{id}', [CommentController::class, 'update'])->middleware('auth')->name('comments.update');
+Route::get('/delete_comments', [CommentController::class, 'commentDelete'])->middleware('auth');
 Route::get('/deleteimages',[App\Http\Controllers\AdminController::class,'delete_images'])->name('deleteimages');
 Route::get('/tickets_status_change',[App\Http\Controllers\AdminController::class,'status_change']);
 Route::get('/image-upload', [userController::class, 'image_upload']);

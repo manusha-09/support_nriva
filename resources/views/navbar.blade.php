@@ -31,6 +31,7 @@
    {{--  dropbox CDN  --}}
     <link rel="stylesheet" href="{{asset('plugins/dropzone/min/dropzone.min.css')}}">
     <script src="{{asset('plugins/dropzone/min/dropzone.min.js')}}"></script>
+<script defer src="{{ asset('dist/js/delete-confirmation.js') . '?v=' . filemtime(public_path('dist/js/delete-confirmation.js')) }}"></script>
 </head>
 <style>
   body{

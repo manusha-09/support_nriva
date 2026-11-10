@@ -1,8 +1,8 @@
 @php($deskFirst = $deskTickets[0] ?? null)
-<aside class="desk-properties" aria-label="Selected ticket properties">
-    <div class="desk-panel-title">Ticket Properties <i class="fas fa-sliders-h" aria-hidden="true"></i></div>
+<aside class="desk-properties" aria-label="Selected ticket details">
+    <div class="desk-panel-title">Ticket Details <i class="fas fa-sliders-h" aria-hidden="true"></i></div>
     <div class="desk-property-content">
-        <section class="desk-property-card"><h2>Contact Info</h2>
+        <section class="desk-property-card"><h2>Created By</h2>
             <div class="desk-contact"><span class="desk-avatar" data-desk-avatar>{{ strtoupper(substr($deskFirst->name ?? 'T', 0, 1)) }}</span><div><strong data-desk="name">{{ $deskFirst->name ?? 'Select a ticket' }}</strong><span>Ticket requester</span></div></div>
             <dl><dt>Email</dt><dd data-desk="email">{{ $deskFirst->email ?? 'Not provided' }}</dd></dl>
         </section>

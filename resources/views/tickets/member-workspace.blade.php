@@ -23,9 +23,9 @@
                   </div> -->
                  
                    <div id="filters4" class=" pl-0 pr-1">
-                     <select  style="width: 120px!important;" class="fetchval form-control form-cntrl font-weight-bold" id="status">
-                        <option value="All">All Tickets</option>
-                        <option value="pending" @if(Request::get('status')=='pending' || empty(Request::get('status'))) Selected @endif >Pending</option>
+                     <select  style="width: 120px;" class="fetchval form-control form-cntrl font-weight-bold" id="status">
+                        <option value="All" @if(Request::get('status', $deskDefaultStatus ?? 'pending')==='All') selected @endif>All Tickets</option>
+                        <option value="pending" @if(Request::get('status', $deskDefaultStatus ?? 'pending')==='pending') selected @endif >Pending</option>
                         <option value="assigned" @if(Request::get('status')=='assigned') Selected @endif>Assigned</option>
                         <option value="inprogress" @if(Request::get('status')=='inprogress') Selected @endif>Inprogress</option>
                         <option value="completed" @if(Request::get('status')=='completed') Selected @endif>Completed</option>
@@ -58,7 +58,7 @@
             </div>
                <div class="row">
                   <div class="col-12 col-md-6 col-lg-5 pl-1 py-1 desk-ticket-list" >
-                     <h5 class="font-weight-bold mb-0 headings-styles pb-1">All&nbsp;Tickets</h5>
+                     <h5 class="font-weight-bold mb-0 headings-styles pb-1">{{ $deskTitle ?? 'All Tickets' }}</h5>
                <div class="table-responsive">
                <table  width="100%" class="table bordred table-hover space tickets">
                   <thead>
@@ -150,7 +150,7 @@
                             <a class=" btn btn-violet  btn-sm pull-right mr-2 shareTicket py-1"  data-id="{{$data[0]->ticket_unique_id??''}}"><i class="fa fa-link" aria-hidden="true"></i></a>
 
                         <a class='btn btn-violet  btn-sm pull-right  mr-2 edit_tickets py-1' ><i class="fa fa-edit" aria-hidden="true"></i></a>
-                         <a class='btn btn-violet  btn-sm pull-right  mr-2 delete_tickets py-1' href="javascript:;" onclick="return confirm('Are you sure?')"><i class="fa fa-trash" aria-hidden="true"></i></a>
+                         <a class='btn btn-violet  btn-sm pull-right  mr-2 delete_tickets py-1' href="javascript:;"><i class="fa fa-trash" aria-hidden="true"></i></a>
                     
                       
                        
@@ -226,7 +226,7 @@
        <?php  $images= explode(',' , $data[0]->file_path);?>
      
             @foreach($images as $key=>$image)
-             <span class="removeimage"><button class=' mr-2 delete_images py-1' data-id="{{$data[0]->id??''}}" data-key="{{$key}}" data-src="{{$image}}" href="javascript:;" onclick="return confirm('Are you sure?')">X</button>
+             <span class="removeimage"><button class=' mr-2 delete_images py-1' data-id="{{$data[0]->id??''}}" data-key="{{$key}}" data-src="{{$image}}" href="javascript:;">X</button>
             <img src="{{asset('storage/'.preg_replace('#^public/#', '', $image))}}"  class="images images_list " width="100px" height=
             "100px"></span>
             @endforeach
@@ -245,25 +245,7 @@
          <div class="row add_comment" style="display: none;">
              <div class="col-12">
             
-                    <form method="" action="" >
-                     @csrf
-                     <div class="row">
-                   <div class="form-group col-9">
-                     
-                       <textarea  name="body" class="form-control body" placeholder="Write Comment Here" /></textarea>
-                            <input type="hidden" name="post_id"  class="ticketid" value="{{$data[0]->id??''}}" >
-                            <input type="hidden" name="parent_id"  class="commentspost_id" value="0" />
-                      
-                    </div>
-
-                       
-       
-                     <div class="form-group mt-2 col-3">
-                       
-                            <input type="button" class="btn btn-success submit_comment" value="Add Comment">
-                    </div>
-                </div>
-                      </form>
+                    @include('tickets.comment-composer', ['commentTicketId' => $data[0]->id ?? ''])
                 </div>
           
         </div>
@@ -273,33 +255,7 @@
 
 
 <div class="main_comment--container comments_list  ">
-
-    @foreach($comments as $comment)
-    <div class="row py-2 removecomment" >
-        <div class="col-2 col-md-1">
-            <div class="letter_circle mx-2">
-                <span class="firstletter "><?php
-
-                 $fstchar = substr($comment->user->name,0,1);
-                 echo ucfirst($fstchar);
-                ?> </span>
-            </div>
-        </div>
-        <div class="col-10 col-md-11 pl-3 pl-md-0 ">
-             <div class="font-weight-bold">{{$comment->user->name??''}}</div>
-             <div>
-                <?php
-             $gettime=abs(time() - strtotime($comment->created_at)) < 300;
-             echo $gettime;
-         ?>
-             
-         </div><a class='pull-right delete-comments mr-2 py-1' data-id="{{$comment->id}}" href="javascript:;" ><i class="fa fa-trash text-red" aria-hidden="true"></i></a>
-            <div class="text-break"> {{$comment->body}}</div>
-        </div>
-    </div>
-
-   
-    @endforeach
+@include('tickets.comment-list')
 </div>
 
 </div>
@@ -354,7 +310,7 @@
                             
                              <select  class="form-control" name="department">
                             <option class="department_ajax_val">{{$data[0]->department??''}}</option>
-                            @foreach ($department as $departments)
+                            @foreach ($department->where('status', 1)->whereNull('deleted_at') as $departments)
                             <option value="{{$departments->department}}">{{$departments->department}}
                                 
                             </option>
@@ -366,7 +322,7 @@
                             
                              <select  class="form-control chaptername" name="chapter">
                             <option value="">-- No Chapter --</option>
-                            @foreach ($chapters as $chapter)
+                            @foreach ($chapters->where('status', 1)->whereNull('deleted_at') as $chapter)
                             <option value="{{$chapter->chapter_id??''}}">{{$chapter->chapter_name??''}}
                                 
                             </option>
@@ -561,13 +517,22 @@ window.location.href= @json($deskListUrl ?? url('mytickets'));
                                   $('.selected_committee').html(response.employees.committee);
 
                                   
+                            $('.chaptername option[data-current-chapter]').remove();
                             if (response.employees.chapters === null) {
                                 $('.chaptername1').text("No Chapter Available");
                                 $('.chaptername').val('');
                             }else{ 
                                // console.log(response.employees.chapters);
                                 $('.chaptername1').text(response.employees.chapters.chapter_name);
-                                $('.chaptername').val(response.employees.chapters.chapter_id);
+                                var chapterId = String(response.employees.chapters.chapter_id);
+                                var chapterSelect = $('.chaptername');
+                                if (!chapterSelect.find('option').filter(function() { return this.value === chapterId; }).length) {
+                                    var currentChapter = new Option(response.employees.chapters.chapter_name + ' (current assignment — inactive)', chapterId);
+                                    currentChapter.hidden = true;
+                                    currentChapter.setAttribute('data-current-chapter', 'true');
+                                    chapterSelect.append(currentChapter);
+                                }
+                                chapterSelect.val(chapterId);
                             }
                                     
                                
@@ -632,23 +597,21 @@ $('body').on('click',"#edit_cancel",function() {
       },
       success: function(data){
           Swal.fire({
-  position: 'between',
-    icon: 'success',
-  title: 'Comment Deleted Successfully',
-  showConfirmButton: false,
-  timer: 1500
-})
-          this_class.parents('.removecomment').remove();
+          position: 'center',
+          icon: 'success',
+          title: 'Comment deleted!',
+          text: 'Your comment has been removed successfully.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#3085d6'
+        })
+          this_class.closest('.comments_list').html(data.comments);
       },
     });
       });
 
 
         $('body').on('click'," .delete_images",function() {
-    var result = confirm("Are you sure ?");
-      if (!result) {
-      return false;
-       }
+    
    
         var id = $(this).data('id');
      var key= $(this).data('key');
@@ -666,10 +629,11 @@ $('body').on('click',"#edit_cancel",function() {
       success: function(data){
          Swal.fire({
           position: 'center',
-            icon: 'success',
-          title: 'Image Deleted Successfully',
-          showConfirmButton: false,
-          timer: 1500
+          icon: 'success',
+          title: 'Attachment removed!',
+          text: 'The attachment has been removed from this ticket.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#3085d6'
         })
          this_class.parent('.removeimage').remove();  
         
@@ -694,10 +658,11 @@ $('body').on('click',"#edit_cancel",function() {
               $('.body').val(''); 
              Swal.fire({
           position: 'center',
-            icon: 'success',
-          title: 'Comment Added Successfully',
-          showConfirmButton: false,
-          timer: 1500
+          icon: 'success',
+          title: 'Comment added!',
+          text: 'Your comment has been added successfully.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#3085d6'
         }) 
         $('.comments_list').html(data.comments); 
 
@@ -726,11 +691,12 @@ $('body').on('click',"#edit_cancel",function() {
               $('.editshowdetails').hide();
               $('#showdetails').show();
              Swal.fire({
-            position: 'center',
-            icon: 'success',
-          title: 'Ticket Updated Successfully',
-          showConfirmButton: false,
-          timer: 1500
+          position: 'center',
+          icon: 'success',
+          title: 'Ticket updated!',
+          text: 'Your ticket has been updated successfully.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#3085d6'
         })
 
            }

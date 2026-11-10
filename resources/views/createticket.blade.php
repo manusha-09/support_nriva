@@ -310,15 +310,13 @@ text-decoration: none;
 </script>
   
 <script type="text/javascript">
+        if (window.Dropzone) {
         Dropzone.options.imageUpload = {
              maxFilesize: 12,
-              renamefile: function(file) 
+              renameFile: function(file) 
             {
-            var dt = new Date();
-            var time = dt.gettime();
-         
-           return time+"-"+file.name;  
-        };
+           return Date.now()+"-"+file.name;
+        },
      
          acceptedFiles: ".jpeg,.jpg,.png,.gif",
             addRemoveLinks: true,
@@ -330,6 +328,7 @@ text-decoration: none;
                 return false;
             }
         };
+        }
 </script>
 <script>
 

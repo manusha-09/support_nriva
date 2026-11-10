@@ -15,46 +15,57 @@ class CommentController extends Controller
     {
         //dd($request->all());
     	$request->validate([
-            'body'=>'required',
+            'body' => 'required|string',
+            'post_id' => 'required|integer|exists:tbl_ticketing_system_tickets,id',
+            'parent_id' => 'nullable|integer|min:0',
         ]);
    
-        $input = $request->except(['_token','files']);
+        $parentId = (int) $request->input('parent_id', 0);
+        if ($parentId && !Comment::where('id', $parentId)->where('post_id', $request->post_id)->where('parent_id', 0)->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['parent_id' => 'Please reply to a comment on this ticket.']);
+        }
+        $input = $request->only(['body', 'post_id']);
+        $input['parent_id'] = $parentId;
         $input['user_id'] = Auth::user()->id;
         //dd($input);
     
         Comment::create($input);
-        $comments=Comment::with(['user','replies'])->where('post_id', $input['post_id']??0)->where('parent_id',0)->orderBy('id','desc')->get();
+        $comments=Comment::with(['user','replies.user'])->where('post_id', $input['post_id']??0)->where('parent_id',0)->orderBy('id','desc')->get();
      
 
 
-        $html='<div>';
-            foreach($comments as $comment){
-                
-                $html.=' <div class="row py-2 removecomment">
-         <div class="col-2 col-md-1">
-            <div class="letter_circle mx-2"><span class="firstletter">'.ucfirst(substr($comment->user->name,0,1)).'</span></div></div>
-       <div class="col-10 col-md-11 pl-3 pl-md-0"><b>'.$comment->user->name.'</b><a class="pull-right delete-comments mr-2 py-1" data-id="'.$comment->id.'" href="javascript:;"><i class="fa fa-trash text-red" aria-hidden="true"></i></a> ';
-
-              
-                 
-                $html.='<div class="text-break"> '.$comment->body.' </div></div></div>';
-           
-
-                
-          }
-         $html.='</div>';
+        $html = view('tickets.comment-list', compact('comments'))->render();
 
 
         return response()->json(['success' => true,'comments'=> $html]);
    
          // return redirect()->intended('viewticket?id='.$request->post_id.'');
     }
+    public function update(Request $request, $id)
+    {
+        $comment = Comment::findOrFail($id);
+        abort_unless((string) $comment->user_id === (string) Auth::id() || Auth::user()->isSupportAdmin(), 403);
+        $request->validate(['body' => 'required|string']);
+        $comment->body = $request->body;
+        $comment->save();
+        $comments = Comment::with(['user', 'replies.user'])->where('post_id', $comment->post_id)
+            ->where('parent_id', 0)->orderBy('id', 'desc')->get();
+
+        return response()->json(['success' => true, 'comments' => view('tickets.comment-list', compact('comments'))->render()]);
+    }
+
      public function commentDelete(Request $request){
 
       $commentid= $request->id;
-      $comment_delete=Comment::where('id',$commentid)->delete();
+      $comment = Comment::findOrFail($commentid);
+      DB::transaction(function () use ($comment) {
+          Comment::where('post_id', $comment->post_id)->where('parent_id', $comment->id)->delete();
+          $comment->delete();
+      });
 
-        return response()->json(['success' => true]);
+        $comments = Comment::with(['user', 'replies.user'])->where('post_id', $comment->post_id)
+            ->where('parent_id', 0)->orderBy('id', 'desc')->get();
+        return response()->json(['success' => true, 'comments' => view('tickets.comment-list', compact('comments'))->render()]);
 
     }
 }

@@ -65,20 +65,15 @@ class projectController extends Controller
 
             public function status(Request $request){
 
+         $request->validate(['status' => 'required|in:0,1']);
          $did = $request->id;
 
 
-         $list = project::where('id', $did)->first();
+         $list = project::where('id', $did)->firstOrFail();
 
-         if($project->status == 0){
-          $status = 1;
-         } else
-         {
-          $status = 0;
-        }
+         $status = (int) $request->status;
         project::where('id', $did)->update(['status'=> $status]);
-        dd($status);
 
-        return response()->json('success','updated successfully');
+        return response()->json(['success' => true, 'message' => 'updated successfully', 'status' => $status]);
         }
 }

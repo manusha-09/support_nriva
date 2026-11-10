@@ -33,6 +33,7 @@
   <script src="https://cdn.ckeditor.com/ckeditor5/38.0.1/classic/ckeditor.js"></script>
     <link rel="stylesheet" href="{{asset('plugins/dropzone/min/dropzone.min.css')}}">
     <script src="{{asset('plugins/dropzone/min/dropzone.min.js')}}"></script>
+<script defer src="{{ asset('dist/js/delete-confirmation.js') . '?v=' . filemtime(public_path('dist/js/delete-confirmation.js')) }}"></script>
 </head>
  <div class="container-fluid bg-light">
       <div class="row">
@@ -339,7 +340,7 @@ text-decoration: none;
     var moreUploadTag = '';
     moreUploadTag += '<div class="element form-group row"><label class="col-sm-4 col-form-label" for="upload_file"' + upload_number + '>Upload File ' + upload_number + '</label>';
     moreUploadTag += '<input type="file" name="files[]"  class="col-sm-6 form-control-file"/>';
-    moreUploadTag += ' <div class="col-lg-2"><a class="btn btn-danger" href="javascript:del_file(' + upload_number + ')" style="cursor:pointer;" onclick="return confirm("Are you really want to delete ?")">Delete </a></div></div>';
+    moreUploadTag += ' <div class="col-lg-2"><a class="btn btn-danger" href="javascript:del_file(' + upload_number + ')" style="cursor:pointer;">Delete </a></div></div>';
     $('<dl id="delete_file' + upload_number + '">' + moreUploadTag + '</dl>').fadeIn('slow').appendTo('#moreImageUpload');
     upload_number++;
       });

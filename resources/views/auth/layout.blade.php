@@ -36,6 +36,7 @@
 
     </style>
 
+<script defer src="{{ asset('dist/js/delete-confirmation.js') . '?v=' . filemtime(public_path('dist/js/delete-confirmation.js')) }}"></script>
 </head>
 
 <body>

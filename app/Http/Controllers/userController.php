@@ -78,7 +78,7 @@ $data_incomplete=$data->where('issue_status','inprogress')->count();
     { 
         //dd($id);
            $categories = categories::all();
-        $department = department::all();
+        $department = department::where('status', 1)->whereNull('deleted_at')->orderBy('name')->get();
       
         $ticket = tickets::where('id',$id)->first();
         return view('edittickets', compact('ticket','categories','department'));
@@ -89,8 +89,24 @@ $data_incomplete=$data->where('issue_status','inprogress')->count();
       $id = $id ?? $request->input('id');
    
         $ticket = tickets::findOrFail($id);
+        // Keep historical assignments, but allow reassignment only to active groups.
+        if ($request->filled('department') && $request->department !== $ticket->department) {
+            $request->validate(['department' => [
+                \Illuminate\Validation\Rule::exists('committees', 'name')->where('status', 1)->whereNull('deleted_at'),
+            ]]);
+        }
+        if ($request->filled('chapter') && (string) $request->chapter !== (string) $ticket->c_id) {
+            $request->validate(['chapter' => [
+                'integer', \Illuminate\Validation\Rule::exists('chapters', 'id')->where('status', 1)->whereNull('deleted_at'),
+            ]]);
+        }
         if ($request->exists('department')) {
-            $ticket->department = $request->filled('department') ? $request->department : null;
+            $department = $request->filled('department') ? $request->department : null;
+            if ($department !== $ticket->department) {
+                $ticket->assigned_committee_user_id = null;
+                $ticket->assigned_committee_member_id = null;
+            }
+            $ticket->department = $department;
         }
         $ticket->subject = $request->subject;
         $ticket->category = $request->category;
@@ -100,7 +116,12 @@ $data_incomplete=$data->where('issue_status','inprogress')->count();
              $ticket->issue_status = $request->issue_status;
              if ($request->exists('chapter')) {
                  $request->validate(['chapter' => 'nullable|integer|exists:chapters,id']);
-                 $ticket->c_id = $request->filled('chapter') ? $request->chapter : null;
+                 $chapter = $request->filled('chapter') ? $request->chapter : null;
+                 if ((string) $chapter !== (string) $ticket->c_id) {
+                     $ticket->assigned_chapter_user_id = null;
+                     $ticket->assigned_chapter_lead_id = null;
+                 }
+                 $ticket->c_id = $chapter;
              }
              //dd($request->all());
      
@@ -109,7 +130,7 @@ $data_incomplete=$data->where('issue_status','inprogress')->count();
 
            if(($request->hasFile('files'))){
 
-                        $paths=[];
+                        $paths = array_values(array_filter(explode(',', (string) $ticket->file_path)));
 
                 if($request->hasFile('files'))
                 {
@@ -160,12 +181,13 @@ $data_incomplete=$data->where('issue_status','inprogress')->count();
         $categories = categories::all();
         $department = DB::table(config('nriva.database').'.committees')
             ->where('status', 1)
+            ->whereNull('deleted_at')
             ->orderBy('name', 'asc')
             ->get();
 
         $projects = project::all();
          // $chapter = chapters::all();
-        $chapter = chapters::all();
+        $chapter = chapters::where('status', 1)->whereNull('deleted_at')->orderBy('name')->get();
 
       
         return view('users.home',compact('categories','department','projects','chapter'));
@@ -244,7 +266,7 @@ $data_incomplete=$data->where('issue_status','inprogress')->count();
 
       $employees = tickets::with(['chapters','users','comments'])->where('id', $userid)->first();
 
-      $comments=Comment::with(['user','replies'])->where('post_id',$userid??0)->where('parent_id',0)->orderBy('id','desc')->get();
+      $comments=Comment::with(['user','replies.user'])->where('post_id',$userid??0)->where('parent_id',0)->orderBy('id','desc')->get();
       
       $statusticket=tickets::where('id', $userid)->first();
        //dd($statusticket);
@@ -261,22 +283,7 @@ $data_incomplete=$data->where('issue_status','inprogress')->count();
         }
         
 
-    $html='<div>';
-            foreach($comments as $comment){
-                
-                $html.=' <div class="row py-2 removecomment">
-         <div class="col-2 col-md-1">
-            <div class="letter_circle mx-2"><span class="firstletter">'.ucfirst(substr($comment->user->name,0,1)).'</span></div></div>
-       <div class="col-10 col-md-11 pl-3 pl-md-0"><b>'.$comment->user->name.'</b><a class="pull-right delete-comments mr-2 py-1" data-id="'.$comment->id.'" href="javascript:;" onclick="return confirm(`Are you sure?`)"><i class="fa fa-trash text-red" aria-hidden="true"></i></a> ';
-
-              
-                 
-                $html.='<div class="text-break"> '.$comment->body.' </div></div></div>';
-           
-
-                
-          }
-         $html.='</div>';
+    $html = view('tickets.comment-list', compact('comments'))->render();
 
 
             

@@ -51,7 +51,7 @@
     var moreUploadTag = '';
     moreUploadTag += '<div class="element form-group row"><label class="col-sm-4 col-form-label" for="upload_file"' + upload_number + '>Upload File ' + upload_number + '</label>';
     moreUploadTag += '<input type="file" name="files[]"  class="col-sm-6 form-control-file pl-3"/>';
-    moreUploadTag += ' <div class="col-lg-2 px-0"><a class="btn btn-danger" href="javascript:del_file(' + upload_number + ')" style="cursor:pointer;" onclick="return confirm("Are you really want to delete ?")">Delete </a></div></div>';
+    moreUploadTag += ' <div class="col-lg-2 px-0"><a class="btn btn-danger" href="javascript:del_file(' + upload_number + ')" style="cursor:pointer;">Delete </a></div></div>';
     $('<dl id="delete_file' + upload_number + '">' + moreUploadTag + '</dl>').fadeIn('slow').appendTo('#moreImageUpload');
     upload_number++;
       });

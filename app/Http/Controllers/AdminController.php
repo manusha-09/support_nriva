@@ -150,14 +150,16 @@ class AdminController extends Controller
     $categories = categories::all();
     $department = DB::table(config('nriva.database').'.committees')
         ->where('status', 1)
+        ->whereNull('deleted_at')
         ->orderBy('name', 'asc')
         ->get();
     $projects = project::all();
-    $chapter = chapters::all();
+    $chapter = chapters::where('status', 1)->whereNull('deleted_at')->orderBy('name')->get();
 
     $userCommitteeIds = DB::table(config('nriva.database').'.committeemembers')
         ->where('user_id', Auth::id())
         ->where('status', 1)
+        ->whereIn('year', DB::table(config('nriva.database').'.years')->where('default_year', 1)->select('id'))
         ->pluck('committee_id');
     $userCommittees = DB::table(config('nriva.database').'.committees')
         ->whereIn('id', $userCommitteeIds)
@@ -171,6 +173,13 @@ class AdminController extends Controller
 }
     public function createticketfile(Request $request)
     {
+        if (!\App\Services\TicketSettings::bothAssignmentEnabled() &&
+            ($request->input('assignment_type') === 'both' ||
+                ($request->input('assignment_type') === null && $request->filled('department') && $request->filled('c_id')))) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'assignment_type' => 'Assigning to both a committee and a chapter is disabled. Please choose Committee or Chapter.',
+            ]);
+        }
         // Keep existing submissions compatible; the new form sends an explicit mode.
         if ($request->input('assignment_type') === 'committee') {
             $request->merge(['c_id' => null]);
@@ -195,11 +204,11 @@ class AdminController extends Controller
             'assignment_type' => 'nullable|in:committee,chapter,both',
             'department' => [
                 'nullable', 'required_without:c_id', 'required_if:assignment_type,committee,both',
-                \Illuminate\Validation\Rule::exists('committees', 'name')->where('status', 1),
+                \Illuminate\Validation\Rule::exists('committees', 'name')->where('status', 1)->whereNull('deleted_at'),
             ],
             'c_id' => [
                 'nullable', 'required_without:department', 'required_if:assignment_type,chapter,both',
-                'integer', 'exists:chapters,id',
+                'integer', \Illuminate\Validation\Rule::exists('chapters', 'id')->where('status', 1)->whereNull('deleted_at'),
             ],
            
           
@@ -220,7 +229,28 @@ class AdminController extends Controller
              ]);
 
 
-        //dd($request->all());
+        foreach (['committee' => 'assigned_committee_user_id', 'chapter' => 'assigned_chapter_user_id'] as $type => $column) {
+            $enabled = \App\Services\TicketSettings::memberAssignmentEnabled()
+                && $request->boolean('assign_'.$type.'_member');
+            $group = $request->input($type === 'committee' ? 'department' : 'c_id');
+            $allowed = $request->input('assignment_type') === $type || $request->input('assignment_type') === 'both';
+            $member = null;
+            if ($enabled && $allowed && $group) {
+                $member = \App\Services\TicketAssignees::members($type, $group)->first(function ($item) use ($request, $column) {
+                    return (string) $item->user_id === (string) $request->input($column);
+                });
+                if (!$member) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        $column => 'Please select an active member of this '.$type.' for the default year.',
+                    ]);
+                }
+            }
+            $legacyColumn = $type === 'committee' ? 'assigned_committee_member_id' : 'assigned_chapter_lead_id';
+            $request->merge([
+                $column => $member ? $member->user_id : null,
+                $legacyColumn => $member ? $member->id : null,
+            ]);
+        }
 
       //    $path = $request->file('files')->store('images');
       // $request['file_path']=$path;
@@ -450,7 +480,9 @@ $userCommittees = DB::table(config('nriva.database').'.committees')
          $tid = $request->id;
 
          
-     $status_list=tickets::where('id', $tid)->update(['issue_status'=> $request->status]);
+     $status_list = tickets::findOrFail($tid);
+     $status_list->issue_status = $request->status;
+     $status_list->save();
    
         if($status_list->issue_status == 'completed')
         {
@@ -544,13 +576,18 @@ public function viewfile($id)
 }
  public function fileDestroy(Request $request)
     {
-        $filename =  $request->get('file_path');
-       $update_tickets= tickets::where('file_path',$filename)->delete();
-        $path=public_path().'/images/'.$filename;
-        if (file_exists($path)) {
-            unlink($path);
-        }
-        $update_tickets->update();
+        $request->validate(['file_path' => 'required|string']);
+        $filename = $request->get('file_path');
+        $ticket = tickets::whereRaw('FIND_IN_SET(?, file_path) > 0', [$filename])->firstOrFail();
+        abort_unless(Auth::user()->isSupportAdmin() ||
+            (string) $ticket->created_by === (string) Auth::id(), 403);
+
+        $attachments = explode(',', $ticket->file_path);
+        $attachments = array_filter($attachments, function ($attachment) use ($filename) {
+            return $attachment !== $filename;
+        });
+        $ticket->file_path = implode(',', $attachments);
+        $ticket->save();
         return $filename;  
     }
      public function delete_images(Request $request)

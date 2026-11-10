@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="{{asset('plugins/summernote/summernote-bs4.min.css')}}">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="{{asset('dist/css/style.css')}}">
+<script defer src="{{ asset('dist/js/delete-confirmation.js') . '?v=' . filemtime(public_path('dist/js/delete-confirmation.js')) }}"></script>
 </head>
 <style>
  
@@ -47,10 +48,6 @@
   <!-- Navbar -->
   <nav class="main-header navbar navbar-expand navbar-white navbar-light">
     <!-- Left navbar links -->
-  <?php
-    $user_ag = (request()->userAgent() ?? '');      if(preg_match('/(Mobile|Android|Tablet|GoBrowser|[0-9]x[0-9]*|uZardWeb\/|Mini|Doris\/|Skyfire\/|iPhone|Fennec\/|Maemo|Iris\/|CLDC\-|Mobi\/)/uis',$user_ag))
-    {
-      ?>
     
 
       <ul class="navbar-nav">
@@ -62,9 +59,6 @@
      
       
     </ul>
-   <?php 
- 
-}?>
     
     <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
