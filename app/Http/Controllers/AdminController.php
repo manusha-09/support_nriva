@@ -269,7 +269,7 @@ class AdminController extends Controller
                 }
       $request['file_path']=implode(',', $paths);
       $request['created_by']=Auth::user()->id??0;
-      $request['ticket_created_by_id'] = Auth::user()->id;
+      $request['ticket_created_by_id'] = Auth::id();
       $request['email']=$request['email']??Auth::user()->email;
        // $request['name']=$request['name']??Auth::user()->name;
       $request['name'] = $request['name'] ?? (Auth::user()->first_name ?? Auth::user()->name);
@@ -292,52 +292,7 @@ class AdminController extends Controller
 
         // $ticket->notify(new TicketUpdatedNotification($ticket));
         // dd($ticket->name);
-         $details = [
-        'title' =>  "Hello" .' ' .  $ticket->name ,
-        'body' => '<p>Thank you for creating the ticket.</p>
-
-                <p>We have received your ticket and our team will be working on it. We will notify you through email once the issue has been closed.</p>
-
-                <p>Your ticket details are:</p>
-
-                Ticket ID:'. $ticket_id .
-                '<p>Ticket Link : <a href="https://support.nriva.org/ticketdetails/'.$ticket->id . '">Click Here</a>'
-
-              
-    ];
-     \Mail::to($ticket->email)->send(new \App\Mail\MailNotify($details));
-    // dd($ticket->email);
-    // dd(Auth::user()->email);
-     if(!empty($ticket->department))
-     {
-
-    $d_data = department::where('name', $ticket->department)->first();
-
-    if ($d_data && !empty($d_data->committee_email)) {
-    
-    //
-    //dd($d_data->committee_email);
-
-    $d_details = [
-        'title' => 'Hello'. ' ' . $d_data->department,
-        'body' => '<p>A new ticket has been created/assigned for your committee. Please login to support.nriva.org to check more details.</p>
-
-                <p>Ticket Details:</p>
-
-                Ticket ID:' . $ticket_id.
-                '</p><p>Tikcet link: <a class="btn btn-danger" href="https://support.nriva.org/ticketdetails/'.$ticket->id . '">Click Here</a></p>'.
-              
-                '<p>Created By:</p>
-
-                <p>Name:' . $ticket->name .
-                '</p><p>Email: ' . $ticket->email .
-                '</p>Contact Number: 9877899876'
-    ];
-
-     \Mail::to($d_data->committee_email)->send(new \App\Mail\committeemail($d_details));
-    }
- }
-
+        \App\Services\SupportTicketMail::send($ticket->fresh(), 'created');
   return redirect()->back()->with('success','Ticket has been created successfully.');
         
         if(Auth::user()){
@@ -484,32 +439,6 @@ $userCommittees = DB::table(config('nriva.database').'.committees')
      $status_list->issue_status = $request->status;
      $status_list->save();
    
-        if($status_list->issue_status == 'completed')
-        {
-        
-    
-    //dd($status_list->issue_status);
-    //dd($d_data->committee_email);
-
-    $status_details = [
-        'title' => 'Hello'. ' ' . $status_list->name,
-        'body' => '<p>We have resolved your ticket. 
-
-                        Your ticket details are:</p>
-        
-                <p>Ticket Details:</p>
-
-                <p>Ticket ID: NRIVA - ' . $status_list->id .
-                '<p>Tikcet link: support.nriva.org/</p>
-              
-                <p>Ticket Status: ' . $status_list->issue_status
-               
-    ];
-
-     \Mail::to($status_list->email)->send(new \App\Mail\committeemail($status_details));
-        }
-        //dd("hello");
-
         return response()->json('success');
         }
 
@@ -608,7 +537,9 @@ public function viewfile($id)
         $id=$request->id;
         //dd( $id);
 
-        $statusticket=tickets::where('id',$id)->update(['issue_status'=>$request->statuschanged]);
+        $statusticket = tickets::findOrFail($id);
+        $statusticket->issue_status = $request->statuschanged;
+        $statusticket->save();
        
     }
     public function reorder(Request $request)

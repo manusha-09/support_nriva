@@ -21,7 +21,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //Paginator::useBootstrap();
+        \App\Models\tickets::updated(function ($ticket) {
+    $changes = [];
+    foreach ($ticket->getChanges() as $field => $value) {
+        if (in_array($field, ['updated_at', 'ticket_unique_id'])) { continue; }
+        $changes[] = str_replace('_', ' ', $field).': '.strip_tags((string) $ticket->getOriginal($field)).' -> '.strip_tags((string) $value);
+    }
+    if ($changes) { \App\Services\SupportTicketMail::send($ticket, 'updated', implode("\n", $changes)); }
+});
+foreach (['created' => 'Comment added', 'updated' => 'Comment edited', 'deleted' => 'Comment deleted'] as $event => $label) {
+    \App\Models\Comment::$event(function ($comment) use ($label) {
+        $ticket = \App\Models\tickets::find($comment->post_id);
+        if ($ticket) { \App\Services\SupportTicketMail::send($ticket, 'updated', $label.': '.strip_tags($comment->body)); }
+    });
+}
         
 
         view()->composer('*', function($view) {

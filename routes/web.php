@@ -33,6 +33,9 @@ Route::get('logout', [AuthController::class, 'logouts'])->name('logout');
 
 
 Route::middleware(['auth', 'admin'])->group(function () {
+ Route::get('/mail-templates', [\App\Http\Controllers\SupportMailTemplateController::class, 'index'])->name('mail-templates.index');
+ Route::put('/mail-templates/{id}', [\App\Http\Controllers\SupportMailTemplateController::class, 'update'])->name('mail-templates.update');
+
 
     Route::get('/settings', [\App\Http\Controllers\TicketSettingsController::class, 'edit'])->name('ticket.settings');
     Route::post('/settings', [\App\Http\Controllers\TicketSettingsController::class, 'update'])->name('ticket.settings.update');

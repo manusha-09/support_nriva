@@ -75,7 +75,7 @@
             <a href="{{route('logo_edit')}}"><span class=" fas fa-pen"></span>Manage&nbsp;Data</a>
           </li>
           <li>
-            <a href="{{route('ticket.settings')}}"><span class="fa fa-cog"></span>Settings</a>
+            <a href="{{route('mail-templates.index')}}"><span class="fa fa-envelope"></span>Mail Templates</a></li><li><a href="{{route('ticket.settings')}}"><span class="fa fa-cog"></span>Settings</a>
           </li>
           @endif
           <li>
